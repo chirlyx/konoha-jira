@@ -53,7 +53,7 @@ public class NinjaController {
 
     @GetMapping("/ninja/stats")
     public ResponseEntity<NinjaStatsResponse> stats() {
-        return ResponseEntity.ok(ninjaService.stats());
+        return ResponseEntity.ok(ninjaService.getMissionStats());
     }
 }
 

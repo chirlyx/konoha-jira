@@ -57,21 +57,21 @@ public class NinjaService {
         }
     }
 
-    public NinjaStatsResponse stats() {
+    public NinjaStatsResponse getMissionStats() {
         Ninja ninja = getCurrentNinja();
         List<Mission> missions = missionRepository.findByAssignee(ninja.getId());
-        long inProgress = missions.stream().filter(m -> m.getStatus() == MissionStatus.IN_PROGRESS).count();
-        long completed = missions.stream().filter(m -> m.getStatus() == MissionStatus.COMPLETED).count();
-        long failed = missions.stream().filter(m -> m.getStatus() == MissionStatus.FAILED).count();
-        long pending = missions.stream().filter(m -> m.getStatus() == MissionStatus.PENDING_REVIEW).count();
-        long aborted = missions.stream().filter(m -> m.getStatus() == MissionStatus.ABORTED).count();
+
         return NinjaStatsResponse.builder()
-                .inProgress(inProgress)
-                .completed(completed)
-                .failed(failed)
-                .pending(pending)
-                .aborted(aborted)
+                .inProgress(countMissionsByStatus(MissionStatus.IN_PROGRESS, missions))
+                .completed(countMissionsByStatus(MissionStatus.COMPLETED, missions))
+                .failed(countMissionsByStatus(MissionStatus.FAILED, missions))
+                .pending(countMissionsByStatus(MissionStatus.PENDING_REVIEW, missions))
+                .aborted(countMissionsByStatus(MissionStatus.ABORTED, missions))
                 .build();
+    }
+
+    private long countMissionsByStatus (MissionStatus status, List<Mission> missions) {
+        return missions.stream().filter(m -> m.getStatus() == status).count();
     }
 }
 
