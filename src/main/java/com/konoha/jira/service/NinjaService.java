@@ -35,7 +35,7 @@ public class NinjaService {
                 .orElseThrow(() -> new IllegalStateException("User not found"));
     }
 
-    public ProfileResponse profile() {
+    public ProfileResponse getCurrentNinjaProfile() {
         Ninja ninja = getCurrentNinja();
         return ProfileResponse.builder()
                 .username(ninja.getUsername())

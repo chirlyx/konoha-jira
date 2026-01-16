@@ -28,7 +28,7 @@ public class NinjaController {
 
     @GetMapping("/ninja/profile")
     public ResponseEntity<ProfileResponse> profile() {
-        return ResponseEntity.ok(ninjaService.profile());
+        return ResponseEntity.ok(ninjaService.getCurrentNinjaProfile());
     }
 
     @GetMapping("/ninja/missions")
