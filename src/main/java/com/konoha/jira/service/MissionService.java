@@ -30,35 +30,35 @@ public class MissionService {
         this.ninjaRepository = ninjaRepository;
     }
 
-    public List<MissionResponse> availableMissions() {
-        Ninja current = ninjaService.getCurrentNinja();
-        Set<MissionRank> allowed = allowedRanks(current.getRank());
-        return missionRepository.findAvailable(allowed).stream()
+    public List<MissionResponse> getAvailableMissions() {
+        Ninja currentNinja = ninjaService.getCurrentNinja();
+        Set<MissionRank> allowedMissionRanks = getAllowedMissionRanksByNinjaRank(currentNinja.getRank());
+        return missionRepository.findAvailable(allowedMissionRanks).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
-    public List<MissionResponse> myMissions() {
-        Ninja current = ninjaService.getCurrentNinja();
-        return missionRepository.findByAssignee(current.getId()).stream()
+    public List<MissionResponse> getMyMissions() {
+        Ninja currentNinja = ninjaService.getCurrentNinja();
+        return missionRepository.findByAssignee(currentNinja.getId()).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     @Transactional
     public MissionResponse assignMission(Long missionId) {
-        Ninja current = ninjaService.getCurrentNinja();
-        Set<MissionRank> allowed = allowedRanks(current.getRank());
+        Ninja currentNinja = ninjaService.getCurrentNinja();
+        Set<MissionRank> allowedMissionRanks = getAllowedMissionRanksByNinjaRank(currentNinja.getRank());
 
         Mission mission = missionRepository.lockById(missionId)
                 .orElseThrow(() -> new IllegalArgumentException("Mission not found"));
         if (mission.getStatus() != MissionStatus.AVAILABLE) {
             throw new IllegalStateException("Mission already taken");
         }
-        if (!allowed.contains(mission.getRank())) {
+        if (!allowedMissionRanks.contains(mission.getRank())) {
             throw new IllegalArgumentException("Rank too low for this mission");
         }
-        mission.setAssignedTo(current);
+        mission.setAssignedTo(currentNinja);
         mission.setStatus(MissionStatus.IN_PROGRESS);
         missionRepository.save(mission);
         return toResponse(mission);
@@ -66,10 +66,10 @@ public class MissionService {
 
     @Transactional
     public MissionResponse submitForApproval(Long missionId) {
-        Ninja current = ninjaService.getCurrentNinja();
+        Ninja currentNinja = ninjaService.getCurrentNinja();
         Mission mission = missionRepository.lockById(missionId)
                 .orElseThrow(() -> new IllegalArgumentException("Mission not found"));
-        if (mission.getAssignedTo() == null || !mission.getAssignedTo().getId().equals(current.getId())) {
+        if (mission.getAssignedTo() == null || !mission.getAssignedTo().getId().equals(currentNinja.getId())) {
             throw new IllegalArgumentException("Cannot submit someone else's mission");
         }
         if (mission.getStatus() != MissionStatus.IN_PROGRESS) {
@@ -82,8 +82,8 @@ public class MissionService {
 
     @Transactional
     public MissionResponse createMission(MissionCreateRequest request) {
-        int reward = Optional.ofNullable(request.getRewardExperience())
-                .orElse(request.getRank().getDefaultReward());
+        int reward = calculateReward(request);
+
         Mission mission = Mission.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
@@ -91,8 +91,14 @@ public class MissionService {
                 .rewardExperience(reward)
                 .status(MissionStatus.AVAILABLE)
                 .build();
+
         missionRepository.save(mission);
         return toResponse(mission);
+    }
+
+    private int calculateReward(MissionCreateRequest request) {
+        return Optional.ofNullable(request.getRewardExperience())
+                .orElse(request.getRank().getDefaultReward());
     }
 
     public List<MissionResponse> pendingReview() {
@@ -135,11 +141,17 @@ public class MissionService {
                 .rank(mission.getRank())
                 .status(mission.getStatus())
                 .rewardExperience(mission.getRewardExperience())
-                .assignedTo(mission.getAssignedTo() != null ? mission.getAssignedTo().getUsername() : null)
+                .assignedTo(getAssignedNinjaUsername(mission))
                 .build();
     }
 
-    private Set<MissionRank> allowedRanks(Rank rank) {
+    private String getAssignedNinjaUsername(Mission mission) {
+        return mission.getAssignedTo() != null
+                ? mission.getAssignedTo().getUsername()
+                : null;
+    }
+
+    private Set<MissionRank> getAllowedMissionRanksByNinjaRank(Rank rank) {
         return switch (rank) {
             case GENIN -> Set.of(MissionRank.D, MissionRank.C);
             case CHUNIN -> Set.of(MissionRank.D, MissionRank.C, MissionRank.B);

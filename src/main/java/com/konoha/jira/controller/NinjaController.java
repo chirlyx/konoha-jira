@@ -33,12 +33,12 @@ public class NinjaController {
 
     @GetMapping("/ninja/missions")
     public ResponseEntity<List<MissionResponse>> myMissions() {
-        return ResponseEntity.ok(missionService.myMissions());
+        return ResponseEntity.ok(missionService.getMyMissions());
     }
 
     @GetMapping("/missions/available")
     public ResponseEntity<List<MissionResponse>> available() {
-        return ResponseEntity.ok(missionService.availableMissions());
+        return ResponseEntity.ok(missionService.getAvailableMissions());
     }
 
     @PutMapping("/missions/{id}/assign")
