@@ -25,6 +25,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    private static final String AUTH_API = "/api/auth/**";
+    private static final String HOKAGE_API = "/api/hokage/**";
+
+    private static final String USER_NOT_FOUND = "User not found";
+
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final NinjaRepository ninjaRepository;
 
@@ -40,8 +45,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/hokage/**").hasAuthority(Role.ROLE_HOKAGE.name())
+                        .requestMatchers(AUTH_API).permitAll()
+                        .requestMatchers(HOKAGE_API).hasAuthority(Role.ROLE_HOKAGE.name())
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
@@ -65,12 +70,12 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> {
-            Ninja ninja = ninjaRepository.findByUsername(username)
+            Ninja currentNinja = ninjaRepository.findByUsername(username)
                     .filter(Ninja::isActive)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-            return User.withUsername(ninja.getUsername())
-                    .password(ninja.getPassword())
-                    .authorities(ninja.getRole().name())
+                    .orElseThrow(() -> new UsernameNotFoundException(USER_NOT_FOUND));
+            return User.withUsername(currentNinja.getUsername())
+                    .password(currentNinja.getPassword())
+                    .authorities(currentNinja.getRole().name())
                     .build();
         };
     }
