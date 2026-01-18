@@ -36,7 +36,7 @@ public class HokageController {
 
     @GetMapping("/missions/pending")
     public ResponseEntity<List<MissionResponse>> pending() {
-        return ResponseEntity.ok(missionService.pendingReview());
+        return ResponseEntity.ok(missionService.findPendingMissions());
     }
 
     @PutMapping("/missions/{id}/approve")

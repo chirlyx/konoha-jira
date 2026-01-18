@@ -9,8 +9,7 @@ import com.konoha.jira.dto.MissionCreateRequest;
 import com.konoha.jira.dto.MissionResponse;
 import com.konoha.jira.repository.MissionRepository;
 import com.konoha.jira.repository.NinjaRepository;
-import com.konoha.jira.service.NinjaService;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,6 +17,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @Service
+@Transactional
 public class MissionService {
 
     private final MissionRepository missionRepository;
@@ -30,6 +30,7 @@ public class MissionService {
         this.ninjaRepository = ninjaRepository;
     }
 
+    @Transactional(readOnly = true)
     public List<MissionResponse> getAvailableMissions() {
         Ninja currentNinja = ninjaService.getCurrentNinja();
         Set<MissionRank> allowedMissionRanks = getAllowedMissionRanksByNinjaRank(currentNinja.getRank());
@@ -38,14 +39,14 @@ public class MissionService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<MissionResponse> getMyMissions() {
         Ninja currentNinja = ninjaService.getCurrentNinja();
-        return missionRepository.findByAssignee(currentNinja.getId()).stream()
+        return missionRepository.findMissionsByNinjaId(currentNinja.getId()).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
-    @Transactional
     public MissionResponse assignMission(Long missionId) {
         Ninja currentNinja = ninjaService.getCurrentNinja();
         Set<MissionRank> allowedMissionRanks = getAllowedMissionRanksByNinjaRank(currentNinja.getRank());
@@ -64,7 +65,6 @@ public class MissionService {
         return toResponse(mission);
     }
 
-    @Transactional
     public MissionResponse submitForApproval(Long missionId) {
         Ninja currentNinja = ninjaService.getCurrentNinja();
         Mission mission = missionRepository.lockById(missionId)
@@ -80,7 +80,6 @@ public class MissionService {
         return toResponse(mission);
     }
 
-    @Transactional
     public MissionResponse createMission(MissionCreateRequest request) {
         int reward = calculateReward(request);
 
@@ -101,12 +100,12 @@ public class MissionService {
                 .orElse(request.getRank().getDefaultReward());
     }
 
-    public List<MissionResponse> pendingReview() {
-        return missionRepository.findPendingReview()
+    @Transactional(readOnly = true)
+    public List<MissionResponse> findPendingMissions() {
+        return missionRepository.findPendingMissions()
                 .stream().map(this::toResponse).toList();
     }
 
-    @Transactional
     public MissionResponse resolveMission(Long missionId, boolean success) {
         Mission mission = missionRepository.lockById(missionId)
                 .orElseThrow(() -> new IllegalArgumentException("Mission not found"));
@@ -124,7 +123,6 @@ public class MissionService {
         return toResponse(mission);
     }
 
-    @Transactional
     public MissionResponse abortMission(Long missionId) {
         Mission mission = missionRepository.lockById(missionId)
                 .orElseThrow(() -> new IllegalArgumentException("Mission not found"));

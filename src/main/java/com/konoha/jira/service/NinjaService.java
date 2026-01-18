@@ -62,7 +62,7 @@ public class NinjaService {
     @Transactional(readOnly = true)
     public NinjaStatsResponse getMissionStats() {
         Ninja ninja = getCurrentNinja();
-        List<Mission> missions = missionRepository.findByAssignee(ninja.getId());
+        List<Mission> missions = missionRepository.findMissionsByNinjaId(ninja.getId());
 
         return NinjaStatsResponse.builder()
                 .inProgress(countMissionsByStatus(MissionStatus.IN_PROGRESS, missions))

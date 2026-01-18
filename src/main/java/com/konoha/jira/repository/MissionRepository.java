@@ -7,7 +7,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
-import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
@@ -16,11 +15,14 @@ import java.util.Optional;
 import java.util.Set;
 
 @Repository
-@Transactional
 public class MissionRepository {
 
     @PersistenceContext
     private EntityManager entityManager;
+
+    private static final String FIND_AVAILABLE_MISSIONS_QUERY = "SELECT m FROM Mission m WHERE m.status = :status AND m.rank IN :ranks";
+    private static final String FIND_MISSIONS_BY_NINJA_ID_QUERY = "SELECT m FROM Mission m WHERE m.assignedTo.id = :userId";
+    private static final String FIND_PENDING_MISSIONS_QUERY = "SELECT m FROM Mission m WHERE m.status = :status";
 
     public Mission save(Mission mission) {
         Instant now = Instant.now();
@@ -45,24 +47,24 @@ public class MissionRepository {
 
     public List<Mission> findAvailable(Set<MissionRank> allowedRanks) {
         TypedQuery<Mission> query = entityManager.createQuery(
-                "SELECT m FROM Mission m WHERE m.status = :status AND m.rank IN :ranks",
+                FIND_AVAILABLE_MISSIONS_QUERY,
                 Mission.class);
         query.setParameter("status", MissionStatus.AVAILABLE);
         query.setParameter("ranks", allowedRanks);
         return query.getResultList();
     }
 
-    public List<Mission> findByAssignee(Long userId) {
+    public List<Mission> findMissionsByNinjaId(Long userId) {
         return entityManager.createQuery(
-                        "SELECT m FROM Mission m WHERE m.assignedTo.id = :userId",
+                        FIND_MISSIONS_BY_NINJA_ID_QUERY,
                         Mission.class)
                 .setParameter("userId", userId)
                 .getResultList();
     }
 
-    public List<Mission> findPendingReview() {
+    public List<Mission> findPendingMissions() {
         return entityManager.createQuery(
-                        "SELECT m FROM Mission m WHERE m.status = :status",
+                        FIND_PENDING_MISSIONS_QUERY,
                         Mission.class)
                 .setParameter("status", MissionStatus.PENDING_REVIEW)
                 .getResultList();
