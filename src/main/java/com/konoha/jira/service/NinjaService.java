@@ -8,7 +8,7 @@ import com.konoha.jira.repository.MissionRepository;
 import com.konoha.jira.repository.NinjaRepository;
 import com.konoha.jira.dto.NinjaStatsResponse;
 import com.konoha.jira.dto.ProfileResponse;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -26,6 +26,7 @@ public class NinjaService {
         this.missionRepository = missionRepository;
     }
 
+    @Transactional(readOnly = true)
     public Ninja getCurrentNinja() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication.getName() == null) {
@@ -35,6 +36,7 @@ public class NinjaService {
                 .orElseThrow(() -> new IllegalStateException("User not found"));
     }
 
+    @Transactional(readOnly = true)
     public ProfileResponse getCurrentNinjaProfile() {
         Ninja ninja = getCurrentNinja();
         return ProfileResponse.builder()
@@ -57,6 +59,7 @@ public class NinjaService {
         }
     }
 
+    @Transactional(readOnly = true)
     public NinjaStatsResponse getMissionStats() {
         Ninja ninja = getCurrentNinja();
         List<Mission> missions = missionRepository.findByAssignee(ninja.getId());
