@@ -5,6 +5,7 @@ import com.konoha.jira.dto.NinjaStatsResponse;
 import com.konoha.jira.dto.ProfileResponse;
 import com.konoha.jira.service.NinjaService;
 import com.konoha.jira.service.MissionService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Tag(name = "Ninja Controller ")
 @RestController
 @RequestMapping("/api")
 public class NinjaController {

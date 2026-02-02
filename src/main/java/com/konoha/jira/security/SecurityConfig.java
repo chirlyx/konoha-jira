@@ -20,6 +20,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import java.util.List;
 
 @Configuration
 @EnableMethodSecurity
@@ -27,8 +28,24 @@ public class SecurityConfig {
 
     private static final String AUTH_API = "/api/auth/**";
     private static final String HOKAGE_API = "/api/hokage/**";
-
     private static final String USER_NOT_FOUND = "User not found";
+
+    private static final List<String> SWAGGER_WHITELIST = List.of(
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/v3/api-docs/**",
+            "/v3/api-docs.yaml",
+            "/swagger-resources/**",
+            "/swagger-resources",
+            "/configuration/ui",
+            "/configuration/security",
+            "/webjars/**",
+            "/api-docs/**",
+            "/api-docs.yaml",
+            "/docs/**",
+            "/error",
+            "/favicon.ico"
+    );
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final NinjaRepository ninjaRepository;
@@ -41,17 +58,18 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+        return http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(AUTH_API).permitAll()
+                        .requestMatchers(SWAGGER_WHITELIST.toArray(new String[0])).permitAll()
                         .requestMatchers(HOKAGE_API).hasAuthority(Role.ROLE_HOKAGE.name())
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-        return http.build();
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
     }
 
     @Bean
@@ -85,4 +103,3 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 }
-
